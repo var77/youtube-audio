@@ -1,17 +1,17 @@
 import pafy
 import os
-import json
+from pydub import AudioSegment
+
 
 SERVER_URL = 'http://52.232.85.160/'
-EXT = ".m4a"
 
 def download_audio(video_id):
     if not video_id:
         return {"status": False, "error": "Video id not specified"}
-    song = get_song(video_id)
+    url = get_song(video_id)
 
-    if song:
-        return song
+    if url:
+        return {"status": True, "url": url}
 
     try:
         video = pafy.new(str(video_id))
@@ -21,35 +21,29 @@ def download_audio(video_id):
 
     streams = video.audiostreams
     if len(streams) > 0:
-        filename = video.getbestaudio(preftype=EXT[1:]).download(filepath="./dist", quiet=True)
-        os.rename(filename, './dist/' + video_id + EXT)
+        filename = video.getbestaudio().download(filepath="./dist", quiet=True)
+        convert_to_mp3(filename, video_id)
+        os.remove(filename)
         song_url = SERVER_URL + video_id
-        song = add_song(video_id, get_sec(video.duration), song_url)
-        return song
+        return {"status": True, "url": song_url} 
+
     return {"status": False, "error": "No audio streams found"}
 
 
-def add_song(id, duration, url):
-    with open('songs.json', 'a') as file:
-        try:
-          songs = json.loads(file)
-        except:
-          songs = {}
-        songs[id] = {"duration": duration, "url": url}
-        print(songs)
-        json.dump(songs, file)
-        return songs[id]
+def get_audio_url(vId):
+    try:
+        video = pafy.new(vId)
+        url = video.getbestaudio(preftype='m4a').url
+        return {"status": True, "url": url}
+    except:
+        return {"status": False, "error": "No audio streams found"}
 
+def get_song(vid):
+    path = './dist/' + vid + '.mp3'
+    if(os.path.exists(path)):
+        return SERVER_URL + vid
+    
+    return None
 
-def get_sec(time_str):
-    h, m, s = time_str.split(':')
-    return int(h) * 3600 + int(m) * 60 + int(s)
-
-def get_song(id):
-    with open('songs.json', 'a') as file:
-        try:
-            songs = json.load(file)
-            print(songs)
-            return songs[id]
-        except:
-            return None
+def convert_to_mp3(path, vid):
+    AudioSegment.from_file(path).export("./dist/" + vid + ".mp3", format="mp3")
