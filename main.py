@@ -1,5 +1,13 @@
+import os
 from flask import Flask, request, jsonify
 from converter import *
+
+
+try:
+    os.makedirs('./dist')
+except OSError as e:
+    if e.errno != errno.EEXIST:
+        pass
 
 app = Flask(__name__)
 

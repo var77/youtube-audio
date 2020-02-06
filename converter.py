@@ -21,7 +21,8 @@ def download_audio(video_id):
 
     streams = video.audiostreams
     if len(streams) > 0:
-        filename = video.getbestaudio().download(filepath="./dist", quiet=True)
+        filename = "./dist/" + video_id + '.webm';
+        video.getbestaudio().download(filepath=filename, quiet=True)
         convert_to_mp3(filename, video_id)
         os.remove(filename)
         song_url = SERVER_URL + video_id
